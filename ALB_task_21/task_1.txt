@@ -1,0 +1,72 @@
+Create an EKS cluster and deploy 3 applications: api-app, admin-app, and dashboard-app.
+Create Kubernetes Services so the applications can be accessed inside the cluster.
+Install/configure AWS Application Load Balancer (ALB) support.
+Create an Ingress that routes /api/*, /admin/*, and /dashboard/* to the correct services.
+Enable HTTPS (SSL), redirect HTTP → HTTPS, and configure health checks for the target groups.
+
+
+Commands 
+
+# Verify Cluster
+kubectl get nodes
+
+# Deploy Applications
+kubectl apply -f deployments/api-deployment.yaml
+kubectl apply -f deployments/admin-deployment.yaml
+kubectl apply -f deployments/dashboard-deployment.yaml
+
+# Verify Deployments
+kubectl get deployments
+kubectl get pods
+
+# Create Services
+kubectl apply -f services/api-service.yaml
+kubectl apply -f services/admin-service.yaml
+kubectl apply -f services/dashboard-service.yaml
+
+# Verify Services
+kubectl get svc
+
+# Install Helm (Windows)
+winget install Helm.Helm
+
+# Add AWS EKS Helm Repository
+helm repo add eks https://aws.github.io/eks-charts
+helm repo update
+
+# Verify OIDC Provider
+aws eks describe-cluster --name prod-cluster --region us-east-1 --query "cluster.identity.oidc.issuer" --output text
+
+# Download IAM Policy
+curl -o iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/main/docs/install/iam_policy.json
+
+# Create IAM Policy
+aws iam create-policy --policy-name AWSLoadBalancerControllerIAMPolicy --policy-document file://iam-policy.json
+
+# Create Service Account
+kubectl create serviceaccount aws-load-balancer-controller -n kube-system
+
+# Install AWS Load Balancer Controller
+helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+-n kube-system \
+--set clusterName=prod-cluster \
+--set serviceAccount.create=false \
+--set serviceAccount.name=aws-load-balancer-controller \
+--set region=us-east-1
+
+# Verify Controller
+kubectl get pods -n kube-system
+
+# Create Ingress
+kubectl apply -f ingress/ingress.yaml
+
+# Verify ALB
+kubectl get ingress
+
+# GitHub Upload
+git init
+git add .
+git commit -m "Production ALB Ingress Setup"
+git branch -M main
+git remote add origin <YOUR_GITHUB_REPO_URL>
+git push -u origin main
