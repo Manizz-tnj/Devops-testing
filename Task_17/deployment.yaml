@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: dynamodb-app
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: dynamodb-app
+
+  template:
+    metadata:
+      labels:
+        app: dynamodb-app
+
+    spec:
+
+      serviceAccountName: dynamodb-sa
+
+      containers:
+      - name: app
+
+        image: ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/dynamodb-app:latest
