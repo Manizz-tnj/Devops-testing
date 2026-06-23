@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dynamo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dynamo-app
+  template:
+    metadata:
+      labels:
+        app: dynamo-app
+    spec:
+      serviceAccountName: dynamo-app-sa
+      containers:
+      - name: app
+        image: 525162799312.dkr.ecr.ap-south-1.amazonaws.com/dynamo-app:latest
+        command: ["python", "app.py"]

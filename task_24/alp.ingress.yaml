@@ -1,0 +1,52 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: multi-app-alb-ingress
+  namespace: default
+
+  annotations:
+    kubernetes.io/ingress.class: alb
+
+    alb.ingress.kubernetes.io/scheme: internet-facing
+
+    alb.ingress.kubernetes.io/target-type: ip
+
+    # HTTP → HTTPS redirect
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+
+    # SSL certificate (replace with your ACM ARN)
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-south-1:ACCOUNT_ID:certificate/XXXXXXX
+
+    # Health check configuration
+    alb.ingress.kubernetes.io/healthcheck-path: /
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/success-codes: "200-399"
+
+spec:
+  rules:
+    - http:
+        paths:
+
+          - path: /api/*
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 80
+
+          - path: /admin/*
+            pathType: Prefix
+            backend:
+              service:
+                name: admin-service
+                port:
+                  number: 80
+
+          - path: /dashboard/*
+            pathType: Prefix
+            backend:
+              service:
+                name: dashboard-service
+                port:
+                  number: 80
