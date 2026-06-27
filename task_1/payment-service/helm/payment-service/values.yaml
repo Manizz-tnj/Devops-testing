@@ -1,0 +1,13 @@
+replicaCount: 2
+
+image:
+  repository: 525162799312.dkr.ecr.ap-south-1.amazonaws.com/payment-service
+  tag: v1
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 5000
+
+ingress:
+  enabled: false
