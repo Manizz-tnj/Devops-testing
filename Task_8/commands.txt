@@ -1,0 +1,244 @@
+Exercise 8 – Egress Restriction Incident
+
+Objective:
+Investigate why an application running on Amazon EKS cannot access Amazon DynamoDB. The goal is to identify whether the issue is caused by Security Groups, Network Policies, Route Tables, or VPC Endpoints.
+
+--------------------------------------------------
+Step 1: Verify the EKS Cluster
+--------------------------------------------------
+
+Check that the worker nodes are healthy and connected.
+
+Command:
+
+kubectl get nodes
+
+--------------------------------------------------
+Step 2: Create a Test Pod
+--------------------------------------------------
+
+Deploy a temporary pod with curl installed to test outbound connectivity.
+
+Command:
+
+kubectl run test-pod --image=curlimages/curl --restart=Never -- sleep 3600
+
+Verify the pod is running.
+
+Command:
+
+kubectl get pods
+
+--------------------------------------------------
+Step 3: Access the Test Pod
+--------------------------------------------------
+
+Open a shell inside the pod.
+
+Command:
+
+kubectl exec -it test-pod -- sh
+
+--------------------------------------------------
+Step 4: Test Connectivity to Amazon DynamoDB
+--------------------------------------------------
+
+Run the following command inside the pod.
+
+Command:
+
+curl https://dynamodb.ap-south-1.amazonaws.com
+
+Expected Result (Healthy):
+
+{"__type":"com.amazonaws.dynamodb.v20120810#MissingAuthenticationToken"}
+
+If the command returns "Connection timed out", continue with the following troubleshooting steps.
+
+Exit the pod.
+
+Command:
+
+exit
+
+--------------------------------------------------
+Step 5: Check Application Logs
+--------------------------------------------------
+
+Review the application logs for timeout or connection errors.
+
+Command:
+
+kubectl logs <pod-name>
+
+--------------------------------------------------
+Step 6: Check Kubernetes Network Policies
+--------------------------------------------------
+
+List all Network Policies.
+
+Command:
+
+kubectl get networkpolicy --all-namespaces
+
+Describe the Network Policy if one exists.
+
+Command:
+
+kubectl describe networkpolicy <policy-name> -n <namespace>
+
+Verify that no Egress policy is blocking outbound traffic.
+
+--------------------------------------------------
+Step 7: Verify Service and Endpoints
+--------------------------------------------------
+
+Check that the application service exists.
+
+Command:
+
+kubectl get svc
+
+Verify that endpoints are available.
+
+Command:
+
+kubectl get endpoints
+
+--------------------------------------------------
+Step 8: Verify DNS Resolution
+--------------------------------------------------
+
+Ensure the pod can resolve the DynamoDB endpoint.
+
+Command:
+
+kubectl exec -it test-pod -- nslookup dynamodb.ap-south-1.amazonaws.com
+
+--------------------------------------------------
+Step 9: Test General Internet Connectivity
+--------------------------------------------------
+
+Verify whether outbound internet access is working.
+
+Command:
+
+kubectl exec -it test-pod -- curl https://google.com
+
+--------------------------------------------------
+Step 10: Verify CoreDNS
+--------------------------------------------------
+
+Ensure CoreDNS pods are running.
+
+Command:
+
+kubectl get pods -n kube-system
+
+--------------------------------------------------
+Step 11: Verify Worker Node Details
+--------------------------------------------------
+
+Inspect the test pod configuration.
+
+Command:
+
+kubectl describe pod test-pod
+
+--------------------------------------------------
+Step 12: Verify Security Groups
+--------------------------------------------------
+
+Open the AWS Console.
+
+Navigate to:
+
+EC2 → Security Groups
+
+Verify that the worker node Security Group allows outbound HTTPS (TCP 443).
+
+--------------------------------------------------
+Step 13: Verify Route Tables
+--------------------------------------------------
+
+Open the AWS Console.
+
+Navigate to:
+
+VPC → Route Tables
+
+Confirm that the subnet associated with the worker nodes has a default route to:
+
+• Internet Gateway (Public Subnet)
+
+OR
+
+• NAT Gateway (Private Subnet)
+
+--------------------------------------------------
+Step 14: Verify VPC Endpoints
+--------------------------------------------------
+
+Open the AWS Console.
+
+Navigate to:
+
+VPC → Endpoints
+
+Confirm that a DynamoDB Gateway Endpoint exists if the cluster is running in private subnets.
+
+--------------------------------------------------
+Step 15: (Optional) Simulate an Egress Restriction
+--------------------------------------------------
+
+Create a Network Policy that blocks all outbound traffic.
+
+Create a file named:
+
+deny-egress.yaml
+
+Apply the policy.
+
+Command:
+
+kubectl apply -f deny-egress.yaml
+
+Test DynamoDB connectivity again.
+
+Command:
+
+kubectl exec -it test-pod -- curl https://dynamodb.ap-south-1.amazonaws.com
+
+Delete the policy after testing.
+
+Command:
+
+kubectl delete -f deny-egress.yaml
+
+--------------------------------------------------
+Step 16: Clean Up
+--------------------------------------------------
+
+Delete the temporary test pod.
+
+Command:
+
+kubectl delete pod test-pod
+
+--------------------------------------------------
+Expected Investigation Result
+--------------------------------------------------
+
+✔ Verify that the application is running.
+
+✔ Confirm whether outbound connectivity to DynamoDB is available.
+
+✔ Check if a Network Policy blocks egress traffic.
+
+✔ Verify Security Group outbound rules.
+
+✔ Validate Route Table configuration.
+
+✔ Ensure a DynamoDB VPC Endpoint exists for private subnets.
+
+✔ Identify the root cause of the connection timeout.
