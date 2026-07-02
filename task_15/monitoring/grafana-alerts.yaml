@@ -1,0 +1,25 @@
+groups:
+- name: application-alerts
+
+  rules:
+
+  - alert: High503Errors
+
+    expr: |
+
+      (
+      sum(rate(http_requests_total{status="503"}[5m]))
+      /
+      sum(rate(http_requests_total[5m]))
+      ) * 100 > 2
+
+    for: 2m
+
+    labels:
+      severity: critical
+
+    annotations:
+
+      summary: High HTTP 503 Error Rate
+
+      description: More than 2% of requests are returning HTTP 503.

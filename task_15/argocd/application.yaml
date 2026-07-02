@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: production-project
+  namespace: argocd
+
+spec:
+  description: Production DevOps Investigation Project
+
+  sourceRepos:
+    - "https://github.com/<YOUR_GITHUB_USERNAME>/<YOUR_REPOSITORY_NAME>.git"
+
+  destinations:
+    - namespace: production
+      server: https://kubernetes.default.svc
+
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  orphanedResources:
+    warn: true
+
+  roles:
+    - name: admin
+      description: Full access
+      policies:
+        - p, proj:production-project:admin, applications, *, production-project/*, allow
+      groups:
+        - admins

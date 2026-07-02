@@ -1,0 +1,21 @@
+groups:
+- name: redis-alerts
+
+  rules:
+
+  - alert: RedisAuthenticationFailure
+
+    expr: |
+
+      increase(redis_auth_errors_total[5m]) > 5
+
+    for: 2m
+
+    labels:
+      severity: critical
+
+    annotations:
+
+      summary: Redis Authentication Failure
+
+      description: Redis authentication failures detected.
